@@ -1,0 +1,13 @@
+.env
+.DS_Store
+.idea
+
+/.phpstorm.meta.php
+/_ide_helper.php
+/._.DS_Store
+/.iac-data
+/.php_cs.cache
+/.php-cs-fixer.cache
+/.phpunit.result.cache
+/node_modules
+/public/build/
