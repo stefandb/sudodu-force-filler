@@ -1,8 +1,5 @@
 onmessage = (event) => {
-    console.log(111111);
-    let inputValues = JSON.parse(event.data).values
-    console.log(inputValues);
-    const groupValueMetadata = {1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {}, 9: {}}
+    let gridValues = JSON.parse(event.data).gridValues
     let guesses = []
     let guessRetry = null
     let guessCount  = 0;
@@ -22,28 +19,28 @@ onmessage = (event) => {
             const group = Math.ceil(index / 3) + (rowIndex > 3 ? (rowCount * 3) : 0)
             const groupCellIndex = cleanColumnIndex + (cleanRowIndex > 1 ?((cleanRowIndex - 1) * 3) : 0)
 
-            if (!inputValues[group.toString()][groupCellIndex]) { // || (guessRetry === rowIndex + '-' + index)
+            if (!gridValues[group.toString()][groupCellIndex].value) { // || (guessRetry === rowIndex + '-' + index)
                 let predictValue = 1
                 if (guessRetry === rowIndex + '-' + index) {
-                    predictValue = groupValueMetadata[group.toString()][groupCellIndex].lastGuess + 1
+                    predictValue = gridValues[group.toString()][groupCellIndex].lastGuess + 1
                     guessRetry = null
                 }
-                let horizontalConnectedGroupValues = getGroupCellValues(horizontalConnectedItems(group), horizontalConnectedItems(groupCellIndex), inputValues);
-                let verticalConnectedGroupValues = getGroupCellValues(verticalConnectedItems(group), verticalConnectedItems(groupCellIndex), inputValues);
+                let horizontalConnectedGroupValues = getGroupCellValues(horizontalConnectedItems(group), horizontalConnectedItems(groupCellIndex), gridValues);
+                let verticalConnectedGroupValues = getGroupCellValues(verticalConnectedItems(group), verticalConnectedItems(groupCellIndex), gridValues);
                 for (predictValue; predictValue <= 9; predictValue++) {
                     if (
                         Object.values(horizontalConnectedGroupValues).indexOf(predictValue) === -1 &&
                         Object.values(verticalConnectedGroupValues).indexOf(predictValue) === -1 &&
-                        Object.values(inputValues[group.toString()]).indexOf(predictValue) === -1
+                        Object.values(gridValues[group.toString()]).indexOf(predictValue) === -1
                     ) {
-                        inputValues[group.toString()][groupCellIndex] = predictValue
-                        groupValueMetadata[group.toString()][groupCellIndex] = {guess: true}
+                        gridValues[group.toString()][groupCellIndex].value = predictValue
+                        gridValues[group.toString()][groupCellIndex].guess = true
                         guesses.push({key: rowIndex + '-' + index, group: group.toString(), groupIndex: groupCellIndex, value: predictValue})
                         guessRetry = null
                         break
                     }
                 }
-                if (!inputValues[group.toString()][groupCellIndex]) {
+                if (!gridValues[group.toString()][groupCellIndex].value) {
                     let newRow = 1;
                     let newIndex = 0;
 
@@ -53,11 +50,11 @@ onmessage = (event) => {
                         const latestGuessKey = latestGuess.key.split('-')
                         guesses = guesses.slice(0, -1)
 
-                        groupValueMetadata[latestGuess.group][latestGuess.groupIndex] = {
+                        gridValues[latestGuess.group][latestGuess.groupIndex] = {
                             guess: true,
-                            lastGuess: latestGuess.value
+                            lastGuess: latestGuess.value,
                         }
-                        delete inputValues[latestGuess.group][latestGuess.groupIndex]
+                        gridValues[latestGuess.group][latestGuess.groupIndex].value = null
                         newRow = parseInt(latestGuessKey[0]);
                         newIndex = parseInt(latestGuessKey[1]) - 1
                     } else {
@@ -79,17 +76,17 @@ onmessage = (event) => {
         }
     }
 
-    postMessage({values: inputValues, metaData: groupValueMetadata, guessCount: guessCount})
+    postMessage({gridValues: gridValues, guessCount: guessCount})
 }
 
-function getGroupCellValues(groups, indexes, inputValues) {
+function getGroupCellValues(groups, indexes, gridValues) {
     let values = {}
 
     let index = 0;
     let groupIndex = 0;
     for (groupIndex in groups) {
         for (index in indexes) {
-            values[groups[groupIndex]+ '-' + indexes[index]] = inputValues[groups[groupIndex]][indexes[index]]
+            values[groups[groupIndex]+ '-' + indexes[index]] = gridValues[groups[groupIndex]][indexes[index]].value
         }
     }
 
