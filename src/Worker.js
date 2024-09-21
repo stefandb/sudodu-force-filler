@@ -4,11 +4,11 @@ onmessage = (event) => {
     let guessRetry = null
     let guessCount  = 0;
 
-    rowLoop: for (let rowIndex = 1; rowIndex <= 9; rowIndex++) {
-        for (let index = 1; index <= 9; index++) {
-            let cleanRowIndex = rowIndex;
+    rowLoop: for (let row = 1; row <= 9; row++) {
+        for (let column = 1; column <= 9; column++) {
+            let cleanRowIndex = row;
             let rowCount = 0;
-            let cleanColumnIndex = index;
+            let cleanColumnIndex = column;
             while (cleanRowIndex > 3) {
                 cleanRowIndex -= 3
                 rowCount++
@@ -16,33 +16,29 @@ onmessage = (event) => {
             while (cleanColumnIndex > 3) {
                 cleanColumnIndex -= 3
             }
-            const group = Math.ceil(index / 3) + (rowIndex > 3 ? (rowCount * 3) : 0)
-            const groupCellIndex = cleanColumnIndex + (cleanRowIndex > 1 ?((cleanRowIndex - 1) * 3) : 0)
 
-            if (!gridValues[group.toString()][groupCellIndex].value) { // || (guessRetry === rowIndex + '-' + index)
+            if (!gridValues[row + '-' + column].value) {
                 let predictValue = 1
-                if (guessRetry === rowIndex + '-' + index) {
-                    predictValue = gridValues[group.toString()][groupCellIndex].lastGuess + 1
+                if (guessRetry === row + '-' + column) {
+                    predictValue = gridValues[row + '-' + column].lastGuess + 1
                     guessRetry = null
                 }
-                let horizontalConnectedGroupValues = getGroupCellValues(horizontalConnectedItems(group), horizontalConnectedItems(groupCellIndex), gridValues);
-                let verticalConnectedGroupValues = getGroupCellValues(verticalConnectedItems(group), verticalConnectedItems(groupCellIndex), gridValues);
                 for (predictValue; predictValue <= 9; predictValue++) {
                     if (
-                        Object.values(horizontalConnectedGroupValues).indexOf(predictValue) === -1 &&
-                        Object.values(verticalConnectedGroupValues).indexOf(predictValue) === -1 &&
-                        Object.values(gridValues[group.toString()]).indexOf(predictValue) === -1
+                        Object.values(getGroupCellValues([row], [1,2,3,4,5,6,7,8,9], gridValues)).indexOf(predictValue) === -1 &&
+                        Object.values(getGroupCellValues([1,2,3,4,5,6,7,8,9], [column], gridValues)).indexOf(predictValue) === -1 &&
+                        Object.values(getGroupCellValues(groupRows(row), groupRows(column), gridValues)).indexOf(predictValue) === -1
                     ) {
-                        gridValues[group.toString()][groupCellIndex].value = predictValue
-                        gridValues[group.toString()][groupCellIndex].guess = true
-                        guesses.push({key: rowIndex + '-' + index, group: group.toString(), groupIndex: groupCellIndex, value: predictValue})
+                        gridValues[row + '-' + column].value = predictValue
+                        gridValues[row + '-' + column].guess = true
+                        guesses.push({key: row + '-' + column, value: predictValue}) //group: group.toString(), groupIndex: groupCellIndex,
                         guessRetry = null
                         break
                     }
                 }
-                if (!gridValues[group.toString()][groupCellIndex].value) {
+                if (!gridValues[row + '-' + column].value) {
                     let newRow = 1;
-                    let newIndex = 0;
+                    let newColumn = 0;
 
                     const latestGuess = guesses.at(-1)
                     if (latestGuess) {
@@ -50,82 +46,61 @@ onmessage = (event) => {
                         const latestGuessKey = latestGuess.key.split('-')
                         guesses = guesses.slice(0, -1)
 
-                        gridValues[latestGuess.group][latestGuess.groupIndex] = {
-                            guess: true,
-                            lastGuess: latestGuess.value,
-                        }
-                        gridValues[latestGuess.group][latestGuess.groupIndex].value = null
+                        gridValues[guessRetry].lastGuess = latestGuess.value
+                        gridValues[guessRetry].value = null
+                        gridValues[guessRetry].guess = true
+
                         newRow = parseInt(latestGuessKey[0]);
-                        newIndex = parseInt(latestGuessKey[1]) - 1
+                        if (latestGuessKey[1] === 1) {
+                            newColumn = 8
+                            newRow--
+                        } else {
+                            newColumn = parseInt(latestGuessKey[1]) - 1
+                        }
                     } else {
                         newRow = 0
                         guessRetry = '1-1'
                     }
-                    rowIndex = newRow
-                    index = newIndex
+                    row = newRow
+                    column = newColumn
                 }
                 if (guessCount === 5000000) {
                     break rowLoop;
                 }
                 guessCount++
-
-                if (guessCount % 1000 === 0) {
-                    console.log(guessCount + ' pogingen')
-                }
             }
         }
     }
-
     postMessage({gridValues: gridValues, guessCount: guessCount})
 }
 
-function getGroupCellValues(groups, indexes, gridValues) {
+function getGroupCellValues(rows, columns, gridValues) {
     let values = {}
 
-    let index = 0;
-    let groupIndex = 0;
-    for (groupIndex in groups) {
-        for (index in indexes) {
-            values[groups[groupIndex]+ '-' + indexes[index]] = gridValues[groups[groupIndex]][indexes[index]].value
-        }
-    }
+    rows.forEach(function (row) {
+        columns.forEach(function (column) {
+            values[row + '-' + column] =  gridValues[row + '-' + column].value
+        })
+    })
 
     return values
 }
 
-function horizontalConnectedItems(index) {
-    let connectedGroups = [index];
-
-    let horizontalRowGroup = 0;
-    while (index > 3) {
-        index -= 3
-        horizontalRowGroup += 1
+function groupRows(row) {
+    let cleanRowIndex = row;
+    let rowCount = 0;
+    while (cleanRowIndex > 3) {
+        cleanRowIndex -= 3
+        rowCount++
     }
 
-    for (let right = index + 1; right <= 3; right++) {
-        connectedGroups.push(right + (horizontalRowGroup * 3))
+    let connectedRows = [row];
+
+    for (let bottom = cleanRowIndex + 1; bottom <= 3; bottom++) {
+        connectedRows.push(bottom + (rowCount * 3))
     }
-    for (let left = index - 1; left >= 1; left--) {
-        connectedGroups.push(left + (horizontalRowGroup * 3))
+    for (let top = cleanRowIndex - 1; top >= 1; top--) {
+        connectedRows.push(top + (rowCount * 3))
     }
-
-    return connectedGroups
-}
-
-function verticalConnectedItems(index) {
-    let connectedGroups = [index];
-
-    let bottom = index + 3
-    while (bottom <=9) {
-        connectedGroups.push(bottom)
-        bottom += 3
-    }
-
-    let top = index - 3
-    while (top >= 1) {
-        connectedGroups.push(top)
-        top -= 3
-    }
-
-    return connectedGroups;
+    return connectedRows
 }
