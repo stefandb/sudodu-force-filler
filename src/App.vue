@@ -28,7 +28,6 @@
                 veld legen
             </button>
         </div>
-        {{ gridValues }}
     </div>
 </template>
 <script setup>
@@ -50,27 +49,11 @@ function makeGrid() {
             grid[row + '-' + column] = {
                 value: null,
                 guess: false,
-                lastGuess: null,
-                row: row,
                 column: column,
-                // group: group.toString(),
-                // groupIndex: cell
+                row: row
             }
         }
     }
-    // for (let group = 1; group <= 9; group++) {
-    //     grid[group.toString()] = {}
-    //     for (let cell = 1; cell <= 9; cell++) {
-    //         grid[group.toString()][cell] = {
-    //             value: null,
-    //             guess: false,
-    //             lastGuess: null,
-    //
-    //             group: group.toString(),
-    //             groupIndex: cell
-    //         }
-    //     }
-    // }
     return grid
 }
 
@@ -91,14 +74,11 @@ async function forceFill()
     isEditable.value = false
     worker.postMessage(JSON.stringify({gridValues: gridValues.value}))
     worker.onmessage = (message) => {
-        console.log(message)
         for (let row = 1; row <= 9; row++) {
             for (let column = 1; column <= 9; column++) {
                 gridValues.value[row + '-' + column] = message.data.gridValues[row + '-' + column]
-                // gridValues.value[rowIndex.toString()] = message.data.gridValues[rowIndex]
             }
         }
-        // guessCount.value = message.data.guessCount
         isFinished.value = true
         isEditable.value = true
     }
