@@ -1,11 +1,18 @@
 <template>
     <div class="flex justify-center items-center mt-4 flex-col">
+        <div>
+            <input type="checkbox" v-model="enablex" /> X
+        </div>
+        ({{ enablex }})
         <div class="grid grid-cols-9 w-96 max-w-96 min-w-96 border-black border-4">
             <div
                 v-for="(cell, key) in gridValues"
                 :key="key"
                 class="grid-cell aspect-square border border-gray-100"
-                :class="{'border-b-2 border-b-gray-400': cell.row % 3 === 0 && cell.row <= 6}"
+                :class="{
+                    'border-b-2 border-b-gray-400': cell.row % 3 === 0 && cell.row <= 6,
+                    'bg-slate-300': enablex && (extraGroups[0].indexOf(key) > -1 || extraGroups[1].indexOf(key) > -1 )
+                }"
             >
                 <number-input
                     :modelValue="cell.value"
@@ -28,6 +35,8 @@
                 veld legen
             </button>
         </div>
+
+        {{extraGroups}}
     </div>
 </template>
 <script setup>
@@ -40,8 +49,12 @@ const gridValues = ref(makeGrid())
 
 let isEditable = ref(true);
 let isFinished = ref(false);
-let guessCount  = ref(0);
-
+let enablex = ref(false);
+let guessCount = ref(0);
+let extraGroups = ref([
+    ['1-1', '2-2', '3-3', '4-4', '5-5', '6-6', '7-7', '8-8', '9-9'],
+    ['1-9', '2-8', '3-7', '4-6', '5-5', '6-4', '7-3', '8-2', '9-1']
+])
 function makeGrid() {
     let grid = {}
     for (let row = 1; row <= 9; row++) {
@@ -72,7 +85,9 @@ function clearField () {
 async function forceFill()
 {
     isEditable.value = false
-    worker.postMessage(JSON.stringify({gridValues: gridValues.value}))
+    worker.postMessage(
+        JSON.stringify({gridValues: gridValues.value, config: {xModes: enablex.value}})
+    )
     worker.onmessage = (message) => {
         for (let row = 1; row <= 9; row++) {
             for (let column = 1; column <= 9; column++) {

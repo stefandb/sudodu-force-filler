@@ -3,7 +3,7 @@
         type="number"
         min="1"
         max="9"
-        class="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full h-full  text-center text-lg"
+        class="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full h-full  text-center text-lg bg-transparent b-none"
         :class="{ 'text-red-700': internalError, 'text-black': !internalError && !guess, 'text-slate-500': !internalError && guess }"
         v-model="inputValue"
         :disabled="!isEditable"

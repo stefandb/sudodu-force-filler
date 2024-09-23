@@ -1,5 +1,12 @@
+let xModesGroups = [
+    ['1-1', '2-2', '3-3', '4-4', '5-5', '6-6', '7-7', '8-8', '9-9'],
+    ['1-9', '2-8', '3-7', '4-6', '5-5', '6-4', '7-3', '8-2', '9-1']
+]
+
 onmessage = (event) => {
-    let gridValues = JSON.parse(event.data).gridValues
+    const data = JSON.parse(event.data)
+    let gridValues = data.gridValues
+    console.log(data, gridValues)
     let guesses = []
     let guessRetry = null
     let guessCount  = 0;
@@ -27,7 +34,10 @@ onmessage = (event) => {
                     if (
                         Object.values(getGroupCellValues([row], [1,2,3,4,5,6,7,8,9], gridValues)).indexOf(predictValue) === -1 &&
                         Object.values(getGroupCellValues([1,2,3,4,5,6,7,8,9], [column], gridValues)).indexOf(predictValue) === -1 &&
-                        Object.values(getGroupCellValues(groupRows(row), groupRows(column), gridValues)).indexOf(predictValue) === -1
+                        Object.values(getGroupCellValues(groupRows(row), groupRows(column), gridValues)).indexOf(predictValue) === -1 &&
+                        (
+                            data.config.xModes && valueInXModus(row, column, predictValue, gridValues) || !data.config.xModes
+                        )
                     ) {
                         gridValues[row + '-' + column].value = predictValue
                         gridValues[row + '-' + column].guess = true
@@ -51,7 +61,7 @@ onmessage = (event) => {
                         gridValues[guessRetry].guess = true
 
                         newRow = parseInt(latestGuessKey[0]);
-                        if (latestGuessKey[1] === 1) {
+                        if (latestGuessKey[1] === 1 && latestGuessKey[0] > 1) {
                             newColumn = 8
                             newRow--
                         } else {
@@ -103,4 +113,26 @@ function groupRows(row) {
         connectedRows.push(top + (rowCount * 3))
     }
     return connectedRows
+}
+
+function valueInXModus(row, column, predictValue, gridValues){
+    let found = false;
+    const key = row + '-' + column
+    if (xModesGroups[0].indexOf(key) > -1) {
+        xModesGroups[0].forEach(function (key) {
+            const keyInfo = key.split('-')
+            if (!found) {
+                found = Object.values(getGroupCellValues([keyInfo[0]], [keyInfo[1]], gridValues)).indexOf(predictValue) > -1
+            }
+        })
+    }
+    if (xModesGroups[1].indexOf(key) > -1 && !found) {
+        xModesGroups[1].forEach(function (key) {
+            const keyInfo = key.split('-')
+            if (!found) {
+                found = Object.values(getGroupCellValues([keyInfo[0]], [keyInfo[1]], gridValues)).indexOf(predictValue) > -1
+            }
+        })
+    }
+    return !found
 }
