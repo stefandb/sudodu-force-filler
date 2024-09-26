@@ -6,7 +6,7 @@
         class="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none w-full h-full  text-center text-lg bg-transparent b-none"
         :class="{ 'text-red-700': internalError, 'text-black': !internalError && !guess, 'text-slate-500': !internalError && guess }"
         v-model="inputValue"
-        :disabled="!isEditable"
+        :disabled="disabled"
     />
 </template>
 
@@ -14,7 +14,7 @@
 import { ref, watch, defineProps, defineEmits, computed } from 'vue'
 
 const internalError = ref(false);
-const props = defineProps(['modelValue', 'isEditable', 'guess', 'error'])
+const props = defineProps(['modelValue', 'disabled', 'error', 'guess'])
 const inputValue = ref(props.modelValue);
 const modelValueComputed = computed(() => props.modelValue)
 const emit = defineEmits(['update:modelValue'])

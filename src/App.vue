@@ -15,6 +15,7 @@
                     :modelValue="cell.value"
                     :isEditable="isEditable"
                     :guess="cell.guess"
+                    :disabled="!isEditable || cell.guess || isFinished"
                     @update:modelValue="$event => cell.value = $event"
                 />
             </div>
@@ -139,6 +140,8 @@ function cancel () {
 
 function clearField () {
     gridValues.value = makeGrid()
+    isFinished.value = false
+    isEditable.value = true
 }
 
 async function forceFill()
