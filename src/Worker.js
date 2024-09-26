@@ -1,12 +1,14 @@
-let xModesGroups = [
+let sudokuX = [
     ['1-1', '2-2', '3-3', '4-4', '5-5', '6-6', '7-7', '8-8', '9-9'],
     ['1-9', '2-8', '3-7', '4-6', '5-5', '6-4', '7-3', '8-2', '9-1']
 ]
 
+let gridGroups = []
+
 onmessage = (event) => {
     const data = JSON.parse(event.data)
+    gridGroups.push(...data.configuration.grid, ...sudokuX)
     let gridValues = data.gridValues
-    console.log(data, gridValues)
     let guesses = []
     let guessRetry = null
     let guessCount  = 0;
@@ -34,14 +36,11 @@ onmessage = (event) => {
                     if (
                         Object.values(getGroupCellValues([row], [1,2,3,4,5,6,7,8,9], gridValues)).indexOf(predictValue) === -1 &&
                         Object.values(getGroupCellValues([1,2,3,4,5,6,7,8,9], [column], gridValues)).indexOf(predictValue) === -1 &&
-                        Object.values(getGroupCellValues(groupRows(row), groupRows(column), gridValues)).indexOf(predictValue) === -1 &&
-                        (
-                            data.config.xModes && valueInXModus(row, column, predictValue, gridValues) || !data.config.xModes
-                        )
+                        valueNotInConnectedGroup(row, column, predictValue, gridValues)
                     ) {
                         gridValues[row + '-' + column].value = predictValue
                         gridValues[row + '-' + column].guess = true
-                        guesses.push({key: row + '-' + column, value: predictValue}) //group: group.toString(), groupIndex: groupCellIndex,
+                        guesses.push({key: row + '-' + column, value: predictValue})
                         guessRetry = null
                         break
                     }
@@ -115,7 +114,25 @@ function groupRows(row) {
     return connectedRows
 }
 
-function valueInXModus(row, column, predictValue, gridValues){
+function valueNotInConnectedGroup(row, column, predictValue, gridValues) {
+    const key = row + '-' + column
+
+    const groupCells = gridGroups.filter(row => row.includes(key))
+    let merged = [... new Set(groupCells.reduce(function (prev, next) {
+        return prev.concat(next)
+    }))];
+
+    const filtered = Object.keys(gridValues)
+        .filter(key => merged.includes(key) && gridValues[key].value === predictValue)
+        .reduce((obj, key) => {
+            obj[key] = gridValues[key];
+            return obj;
+        }, {})
+
+    return Object.keys(filtered).length === 0
+}
+
+function valueInXMods(row, column, predictValue, gridValues){
     let found = false;
     const key = row + '-' + column
     if (xModesGroups[0].indexOf(key) > -1) {
