@@ -5,7 +5,11 @@ export default {
     "./src/**/*.{vue,js}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        "edu-dots": ['Edu AU VIC WA NT Dots', 'sans-serif']
+      }
+    },
   },
   plugins: [],
 }
